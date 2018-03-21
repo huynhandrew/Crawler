@@ -33,12 +33,15 @@ function Game(){
 
     this.fNewUser = function(req, twiml){
         this.Player = req.body.Body;
-        twiml.message("Welcome " + this.Player + " to Crawler. Enter Begin to start.");
+        twiml.message("Welcome " + this.Player + " to Crawler. Send anything to start.");
         this.fCurstate = this.fStartGame;
     }
 
     this.fStartGame = function(req, twiml){
         this.Dungeon = new Dungeon();  
+        this.CurrRoomIndex = 0;
+        this.CurrRoom = this.Dungeon.listDungeonRooms[this.CurrRoomIndex];
+        twiml.message("Hello " + this.Player + ". You've arrived in a room with a door coloured: " + this.CurrRoom.room.door + " .");
     }    
     this.fCurstate = this.fWelcoming;
 }
@@ -46,16 +49,15 @@ function Game(){
 /* DUNGEON CLASS */
 function Dungeon(){
     this.listDungeonRooms = [
-        {room1: new DungeonRoom(1, "blue")},
-        {room2: new DungeonRoom(1, "yellow")},
-        {room3: new DungeonRoom(1, "green")},
-        {room4: new DungeonRoom(1, "purple")}
+        {room: new DungeonRoom("blue")},
+        {room: new DungeonRoom("yellow")},
+        {room: new DungeonRoom("green")},
+        {room: new DungeonRoom("purple")}
     ];
 }
 
 /* DUNGEON ROOM CLASS */
-function DungeonRoom(id, colour){
-    this.id = id;
+function DungeonRoom(colour){
     this.door = colour;
     this.listMonsters = [
         {monster1: new Monster("Skeleton", 5)},
