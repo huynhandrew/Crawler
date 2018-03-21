@@ -15,54 +15,31 @@ var oPlayers = {};
 app.use(express.static('www'));
 
 function Game(){
-    this.Player;
-
+    this.Player = null;
+    this.GameTurn = "Player"
+    this.fCurstate = this.fWelcoming;
+    
     this.fWelcoming = function(req, twiml){
-        twiml.message("Welcome to the Crawler. 1 for New Game 2 for Load Game");
-        this.fCurstate = this.fMenu;    
+        twiml.message("Welcome to the Crawler. 1 for New Game | 2 for Load Game");
+        this.fCurstate = this.fAskInput; 
     }
 
-    this.fGuessing2 = function(req, twiml){
-        twiml.message("Combat Engaged!");        
+    this.fAskInput = function(req, twiml){
+        if (req.body.Body == 1 && this.Player == null){
+            twiml.message("Enter a new name to play: ");
+            this.fCurstate = this.fNewUser;
+        }
     }
 
-    this.fGuessing = function(req, twiml){
+    this.fNewUser = function(req, twiml){
+        this.Player = req.body.Body;
+        twiml.message("Welcome " + this.Player + " to Crawler. Enter Begin to start.");
+        this.fCurstate = this.fStartGame;
+    }
 
-        this.sum = this.first + this.second;
-        this.nGuesses++;
-
-        if(req.body.Body == this.sum){
-            this.nCorrect++;
-            this.nGuesses = 0;
-            this.nIncorrect = 0;
-            
-            this.first = NewNumber(this.difficulty);
-            this.second = NewNumber(this.difficulty);
-            twiml.message("You are correct! What is: " +  QuestionBuilder(this.first,this.second));
-        }
-        else {
-            this.nIncorrect++;
-            if (this.nIncorrect == 2){
-                this.nIncorrect = 0;
-                twiml.message("The correct answer was: " + this.first + this.second);
-
-                this.first = NewNumber(this.difficulty);
-                this.second = NewNumber(this.difficulty);
-                twiml.message("Lets try another question, what is: " +  QuestionBuilder(this.first,this.second));                            
-            }
-            else {
-                this.first = NewNumber(this.difficulty);
-                this.second = NewNumber(this.difficulty);
-                twiml.message("You are incorrect. Try another question: " + QuestionBuilder(this.first,this.second));                
-            }
-        }
-
-        if (this.nCorrect == 4){
-            this.difficulty = 1;
-        }
-        if (this.nCorrect == 9){
-            this.difficulty = 2;
-        }
+    this.fStartGame = function(req, twiml){
+        this.room = "";
+        
     }    
     this.fCurstate = this.fWelcoming;
 }
