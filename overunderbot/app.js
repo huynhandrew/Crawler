@@ -38,16 +38,49 @@ function Game(){
     }
 
     this.fStartGame = function(req, twiml){
-        this.room = "";
-        
+        this.Dungeon = new Dungeon();  
     }    
     this.fCurstate = this.fWelcoming;
 }
 
-function Monster() {
-    this.name = "Monster";
-    this.hitpoints = 10;
+/* DUNGEON CLASS */
+function Dungeon(){
+    this.listDungeonRooms = [
+        {room1: new DungeonRoom(1, "blue")},
+        {room2: new DungeonRoom(1, "yellow")},
+        {room3: new DungeonRoom(1, "green")},
+        {room4: new DungeonRoom(1, "purple")}
+    ];
+}
+
+/* DUNGEON ROOM CLASS */
+function DungeonRoom(id, colour){
+    this.id = id;
+    this.door = colour;
+    this.listMonsters = [
+        {monster1: new Monster("Skeleton", 5)},
+        {monster2: new Monster("Goblin", 3)},
+        {monster3: new Monster("Annoying Bat", 2)}
+    ];
+}
+
+/* MONSTER CLASS */
+function Monster(name, hitpoints) {
+    this.name = name;
+    this.hitpoints = hitpoints;
     this.attack = Math.ceil(Math.random() * 2);
+}
+
+Monster.prototype.attack = function(){
+    return this.attack;
+}
+
+/*###############*/
+
+/* PLAYER CLASS */
+function Player(){
+    this.hitpoints = 20;
+    this.attack = Math.ceil(Math.random()*7);
 }
 
 function NewNumber(difficulty){
