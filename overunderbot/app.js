@@ -19,15 +19,17 @@ var d20Die = (Math.floor(Math.random()*20)+1);
 
 function Game(){
 
-    this.PlayerState = new Player();
-    this.MonsterState = null;
-    this.GameTurn = "Player"
-    this.fCurstate = this.fWelcoming;
-
-    this.Dungeon = new Dungeon();  
+    this.PlayerState;
+    this.MonsterState;
+    this.RiddleState;
+    this.Dungeon;  
     
+    this.fCurstate = this.fWelcoming;    
     
     this.fWelcoming = function(req, twiml){
+        this.PlayerState = new Player();
+        this.Dungeon = new Dungeon();
+        this.RiddleState = new GenRiddle();
         twiml.message("Welcome to the Crawler. 1 for New Game");
         this.fCurstate = this.fAskInput; 
     }
@@ -39,7 +41,7 @@ function Game(){
         }
         else {
             this.fCurstate = this.fWelcoming;
-            twiml.message("Please enter 1 to begin.")
+            twiml.message("Please enter 1 to begin.");
         }
     }
 
@@ -64,12 +66,17 @@ function Game(){
      */
     this.fQuestionMaster = function(req, twiml){
         this.CurrRoom = this.Dungeon.listDungeonRooms[CurrRoomIndex];
-        if (req.body.Body == 1 && CurrRoomIndex < 4){
+        if (req.body.Body == 1 && CurrRoomIndex < 3){
             twiml.message(this.PlayerState.name + " find a "+this.CurrRoom[CurrRoomKey].door + " coloured door | 1. Enter it | 2. Do something else");
             this.fCurstate = this.DoorScenario;
         }
+        else if (req.body.Body == 1 && CurrRoomIndex == 3){
+            twiml.message(this.PlayerState.name + " find a "+this.CurrRoom[CurrRoomKey].door 
+                            + " coloured door. There is no way of opening it but an inscription is imprinted on the door | 1. Read it | 2. Do something else");
+            this.fCurstate = this.RiddleDoorScenario;            
+        }
         else if (req.body.Body == 1 && CurrRoomIndex == 4){
-            twiml.message("There are no doors. 2. Look for monsters.");            
+            twiml.message("There are no doors. 2. Look for monsters.");
         }
         else if (req.body.Body == 2){
             twiml.message(this.PlayerState.name + " encounters a monster! | 1. To engage. | 2. Do something else.");
@@ -100,13 +107,43 @@ function Game(){
     }
 
     /**
+     * Similar to door scenario, but this door has a riddle
+     */
+    this.RiddleDoorScenario = function(req, twiml){
+        if (req.body.Body == 1){
+            var riddleIndex = Math.floor(Math.random()*4);
+            this.RiddleState = new Riddle(GenRiddle(riddleIndex),GetAnswers(riddleIndex));
+            twiml.message(this.RiddleState.theRiddle + " Solve this riddle, you have 5 tries. 'q' to give up anytime.");        
+        }
+        else if (req.body.Body == 'q'){
+            twiml.message(this.PlayerState.name + " turns back. Send anything to continue.");
+            this.fCurstate = this.fStartGame;
+        }
+        else if (this.RiddleState.guessCount > 4){
+            var riddleIndex = Math.floor(Math.random()*4);
+            this.RiddleState = new Riddle(GenRiddle(riddleIndex),GetAnswers(riddleIndex));
+            twiml.message(this.RiddleState.theRiddle + " Solve this riddle, you have 5 tries. Enter now. 'q' to give up anytime.");   
+        }
+        else if ((req.body.Body).toString().toLowerCase() == this.RiddleState.theRiddleAnswer){
+            twiml.message(this.PlayerState.name + " opens the door. Send anything to continue.");
+            CurrRoomIndex++;
+            CurrRoomKey = NewRoom(CurrRoomIndex);
+            this.fCurstate = this.fStartGame;
+        }
+        else {
+            this.RiddleState.guessCount++;
+            twiml.message("That is incorrect, here is the inscription again: " + this.RiddleState.theRiddle + " Amount of tries: " + this.RiddleState.guessCount + "/5.  'q' to give up anytime.");   
+        }
+    }
+
+    /**
      * Give options whether or not to enter combat with a monster
      */
     this.MonsterScenario = function(req, twiml){
         if (req.body.Body == 1){
             twiml.message(this.PlayerState.name + " engages in combat! Send anything to begin combat.");
 
-            this.MonsterState = new Monster(GenMonsterName(Math.floor(Math.random()*2)));
+            this.MonsterState = new Monster(GenMonsterName(Math.floor(Math.random()*5)));
             this.fCurstate = this.CombatTransition;
         }
         else {
@@ -146,7 +183,7 @@ function Game(){
                 this.PlayerState.hitpoints -= this.mAttack;
                 twiml.message(this.PlayerState.name + " hits " + this.pAttack 
                                 + " against " + this.MonsterState.name + " with " 
-                                + this.MonsterState.hitpoints + " HP remaining, it strikes back with " + this.mAttack + " damage!" 
+                                + this.MonsterState.hitpoints + " HP remaining, it strikes back with " + this.mAttack + " damage! " 
                                 + this.PlayerState.name + " has " + this.PlayerState.hitpoints 
                                 + " remaining | 1. Attack again! | 2. Retreat!");                
             }
@@ -189,7 +226,7 @@ function Monster(name){
 }
 
 function GenMonsterName(index){
-    var listOfMonsters = ["Skeleton","Goblin","Annoying Bat"];
+    var listOfMonsters = ["Dancing Skeleton","Yodelling Goblin","Annoying Bat","Rollerblading Arachnid","Singing Banshee"];
     return listOfMonsters[index];    
 }
 
@@ -198,6 +235,29 @@ function Player(){
     this.name = "";
     this.hitpoints = 50;
     this.attackModifier = 3;
+}
+
+function Riddle(riddle,answer){
+    this.theRiddle = riddle;
+    this.theRiddleAnswer = answer;
+    this.guessCount = 0;
+}
+
+/* RIDDLE QUESTIONS */
+function GenRiddle(index){
+    this.Riddles = [
+        "Speak friend, and you may enter",
+        "What walks with four legs in the morning, two legs in the afternoon and three legs in the evening?",
+        "What has a tail and a head with no body but can do backflips and somersaults.",
+        "I am alive, but have no soul. I breathe but have no lungs. I destroy but create at the same time. What am I?"
+    ];
+    return this.Riddles[index];
+}
+
+/* RIDDLE ANSWERS */
+function GetAnswers(index){
+    this.Answers = ['friend','human','coin','fire'];
+    return this.Answers[index];
 }
 
 app.post('/sms', function(req, res){
