@@ -7,10 +7,14 @@
 
 <body>
     <div ng-app="myApp" ng-controller="myCtrl">
+        <h2>Crawler</h2>
+        <p>To begin, enter anything. Thank you for playing the beta version.</p>
         <form>
-            <div ng-repeat="(n, message) in messages track by n">{{message.From}}:&nbsp;{{message.Body}}</div>
-            <p>Message :
-                <input type="text" ng-model="newMessageText">
+            <div style="border-style: double;">
+                <div ng-repeat="(n, message) in messages track by n"><span ng-show="$last">{{message.From}}:&nbsp;{{message.Body}}</span></div>
+            </div>
+            <p>You :
+                <input type="text" ng-model="newMessageText" placeholder="Enter option">
                 <button type="submit" ng-click="addMessage()">Send</button>
             </p>
         </form>
