@@ -3,21 +3,19 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var twilio = require("twilio");
 var app = express();
+app.use(bodyParser.urlencoded({extended:true}));
+app.set("port", 5100);
+var oPlayers = {};
+app.use(express.static('www'));
 
-var listOfMonsters = ["Skeleton","Goblin","Annoying Bat"];
 var listOfPlayerNames = ["Harrison Butterscotch","Richard, King of the Andals, the Rhoynar of the First Men, Knight of the 7 Mountains, Guardian of the 5th Sea, Judicator of the 3rd eye","Glimb Gnomewick","Big Bertha"]
 var CurrRoomKey = 'room0';
 var CurrRoomIndex = 0;
 
-app.use(bodyParser.urlencoded({extended:true}));
-
-app.set("port", 5100);
-
-var oPlayers = {};
-
-var rand = Math.floor(Math.random()*4);
-
-app.use(express.static('www'));
+var d4Die = (Math.floor(Math.random()*4)+1); 
+var d6Die = (Math.floor(Math.random()*6)+1);
+var d10Die = (Math.floor(Math.random()*10)+1);
+var d20Die = (Math.floor(Math.random()*20)+1);
 
 function Game(){
 
@@ -40,13 +38,14 @@ function Game(){
             this.fCurstate = this.fNewUser;
         }
         else {
-            this.fCurstate = this.fAskInput;
+            this.fCurstate = this.fWelcoming;
+            twiml.message("Please enter 1 to begin.")
         }
     }
 
     this.fNewUser = function(req, twiml){
         if (req.body.Body == ""){
-            this.PlayerState.name = listOfPlayerNames[rand];
+            this.PlayerState.name = listOfPlayerNames[Math.floor(Math.random()*4)];
         }
         else {
             this.PlayerState.name = req.body.Body;
@@ -60,6 +59,9 @@ function Game(){
         this.fCurstate = this.fQuestionMaster;
     }    
 
+    /**
+     * Prompt for each option given to the user
+     */
     this.fQuestionMaster = function(req, twiml){
         this.CurrRoom = this.Dungeon.listDungeonRooms[CurrRoomIndex];
         if (req.body.Body == 1 && CurrRoomIndex < 4){
@@ -81,6 +83,9 @@ function Game(){
         }
     }
 
+    /**
+     * Give options whether or not to enter a door
+     */
     this.DoorScenario = function(req, twiml){
         if (req.body.Body == 1){
             twiml.message(this.PlayerState.name + " opens the door. Send anything to continue.");
@@ -94,11 +99,14 @@ function Game(){
         }
     }
 
+    /**
+     * Give options whether or not to enter combat with a monster
+     */
     this.MonsterScenario = function(req, twiml){
         if (req.body.Body == 1){
             twiml.message(this.PlayerState.name + " engages in combat! Send anything to begin combat.");
 
-            this.MonsterState = new Monster(listOfMonsters[Math.floor(Math.random()*2)]);
+            this.MonsterState = new Monster(GenMonsterName(Math.floor(Math.random()*2)));
             this.fCurstate = this.CombatTransition;
         }
         else {
@@ -107,15 +115,22 @@ function Game(){
         }
     }
 
+    /**
+     * States what the player is engaging, how much HP each has before 
+     * the combat begins.
+     */
     this.CombatTransition = function(req, twiml) {
         twiml.message(this.PlayerState.name + " HP: " 
                     + this.PlayerState.hitpoints + " vs. " 
                     + this.MonsterState.name + " HP: " 
                     + this.MonsterState.hitpoints 
-                    + "| 1. Attack | 2. Run away!");
+                    + " | 1. Attack | 2. Run away!");
         this.fCurstate = this.CombatEngaged;
     } 
 
+    /**
+     * For combat, back forth prompt of attacking each other
+     */
     this.CombatEngaged = function(req, twiml){
         
         if (req.body.Body == 1){
@@ -171,6 +186,11 @@ function Monster(name){
     this.name = name;
     this.hitpoints = 15;
     this.attackModifier = 0;
+}
+
+function GenMonsterName(index){
+    var listOfMonsters = ["Skeleton","Goblin","Annoying Bat"];
+    return listOfMonsters[index];    
 }
 
 /* PLAYER OBJECT */

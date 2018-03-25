@@ -9,6 +9,7 @@
     <div ng-app="myApp" ng-controller="myCtrl">
         <h2>Crawler</h2>
         <p>To begin, enter anything. Thank you for playing the beta version.</p>
+        <p>While playing, please use single digit numbers to choose your commands.</p>
         <form>
             <div style="border-style: double;">
                 <div ng-repeat="(n, message) in messages track by n"><span ng-show="$last">{{message.From}}:&nbsp;{{message.Body}}</span></div>
